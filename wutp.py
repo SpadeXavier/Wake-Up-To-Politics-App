@@ -50,6 +50,7 @@ class Wutp():
 
             for point in points:
                 point_text = point.text 
+                point_text = point_text.replace(u'\xa0', ' ')
                 point_text = self.convert(point_text)
                 curr_points.append(point_text)            
 
@@ -118,6 +119,7 @@ class Wutp():
 
         return urls
 
+    @staticmethod
     def get_dates():
         """ returns an array of dates of published issues from newest to oldest
         """
