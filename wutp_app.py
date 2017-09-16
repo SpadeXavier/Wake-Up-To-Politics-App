@@ -4,6 +4,12 @@ from tkinter import ttk
 import os
 
 class App(Tk):
+    
+    # -- bullet point symbols
+    BLACK_CIRCLE = '\u25CF'
+    BLACK_DIAMOND = '\u25C6' 
+    BLACK_TRIANGLE = '\u25BA'
+    BLACK_PARALLEL = '\u25B0'
 
     def __init__(self):
         super().__init__()
@@ -41,14 +47,22 @@ class App(Tk):
 
         # -- getting data   
         wutp = Wutp(url) 
-        content = wutp.get_content()
-       
-        # -- adding it to the canvas
+        content = wutp.traverse()
+      
+        # -- setting a symbol to place before each point
+        symbols = [self.BLACK_CIRCLE, self.BLACK_DIAMOND, self.BLACK_TRIANGLE,
+                self.BLACK_PARALLEL]
+        symbol_counter = 4
+      
+         # -- adding it to the canvas
         for heading,points in content.items():
             self.draw_heading(heading) 
             for point in points:
-                self.draw_point(point)
-                pass
+                current_symbol = symbol_counter % 4
+                self.draw_point(point, symbol=symbols[current_symbol])
+                symbol_counter += 1
+            # -- reset symbol at each heading
+            symbol_counter = 4
         
         # -- update the window and get the bounding box for the widgets and set
         # -- that as the scrolling region for the scrollbar
@@ -85,14 +99,15 @@ class App(Tk):
         heading_label.configure(wraplength=self.width) 
         heading_label.pack(side=TOP, fill=X, ipady=10)
 
-    def draw_point(self, point):
-        """ draws a point onto the canvas in a Text widget""" 
+    def draw_point(self, point, symbol='\u25CF'):
+        """ draws a point onto the canvas in a Text widget, can take a symbol
+        as a parameter with which to place before the point """ 
         
         point_box = Text(self.frame, bg="white", fg="black", wrap=WORD,
                 height=8, font=('arial', 14), pady=5, padx=20)
 
 
-        point_box.insert(1.0, u'\u25C6')
+        point_box.insert(1.0, symbol + ' ')
         point_box.insert('insert', point)
         point_box.configure(state='disabled')
         point_box.pack(side=TOP, fill=X)
