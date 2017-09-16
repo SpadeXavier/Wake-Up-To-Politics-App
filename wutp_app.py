@@ -11,7 +11,7 @@ class App(Tk):
         # -- getting current directory 
         self.directory = os.path.dirname(os.path.realpath('__file__'))
 
-        self.width = 825 
+        self.width = 900 
         self.height = 600 
         # -- more taller than wider 
         self.geometry('%dx%d' % (self.width, self.height))
@@ -20,6 +20,9 @@ class App(Tk):
         
         # -- getting all urls in order
         self.urls = Wutp.get_ordered_urls()
+        
+        # -- getting all the dates in order 
+        self.dates = Wutp.get_dates() 
 
         # -- setting article counter, newest is 0
         self.current_article = 0
@@ -30,8 +33,12 @@ class App(Tk):
     def draw_article(self, url):
         """ puts content of an article on a canvas """
        
+        # -- adding header first
+        self.draw_header() 
+        
+        # -- adding canvas
         self.draw_canvas()
-       
+
         # -- getting data   
         wutp = Wutp(url) 
         content = wutp.get_content()
@@ -61,7 +68,7 @@ class App(Tk):
         
         # make sure to add scrollbar before adding the canvas
         self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.canvas.pack(side=TOP, fill=BOTH, expand=1)
+        self.canvas.pack(side=TOP, fill=BOTH, expand=1, padx=20, pady=20)
        
         # adding a frame to hold all the widgets
         self.frame = ttk.Frame(self.canvas)
@@ -82,12 +89,30 @@ class App(Tk):
         """ draws a point onto the canvas in a Text widget""" 
         
         point_box = Text(self.frame, bg="white", fg="black", wrap=WORD,
-                height=8, font=('arial', 14), pady=5)
+                height=8, font=('arial', 14), pady=5, padx=20)
+
 
         point_box.insert(1.0, u'\u25C6')
         point_box.insert('insert', point)
         point_box.configure(state='disabled')
         point_box.pack(side=TOP, fill=X)
+
+    def draw_header(self):
+        """ draws the header which has the date """
+        
+        HEADER_COLOR = 'grey'
+
+        self.header_frame = Frame(self, background=HEADER_COLOR)
+
+        # -- adding the date 
+        article_date = self.dates[self.current_article] 
+        
+        date_label = ttk.Label(self.header_frame, text=article_date,
+                background=HEADER_COLOR) 
+        date_label.pack(side=RIGHT, padx=25) 
+
+        # -- adding header
+        self.header_frame.pack(side=TOP, fill=X) 
 
     def draw_buttons(self):
         """ draws next and previous buttons """ 
@@ -120,9 +145,10 @@ class App(Tk):
     def prev_article(self, event=None):
         """ redraws canvas with previous article """
     
-        # -- destroy the canvas, scrollbar and the footer  
+        # -- destroy the canvas, scrollbar, header and the footer  
         self.canvas.destroy()
         self.scrollbar.destroy()
+        self.header_frame.destroy() 
         self.button_frame.destroy()
         
         # -- redraw with prev article in urls stack
@@ -133,9 +159,10 @@ class App(Tk):
     def next_article(self, event=None):
         """ redraws canvas with next article """
     
-        # -- destroy the canvas, scrollbar and the footer  
+        # -- destroy the canvas, scrollbar, header and the footer  
         self.canvas.destroy()
         self.scrollbar.destroy()
+        self.header_frame.destroy()
         self.button_frame.destroy()
         
         # -- redraw with next article in urls stack

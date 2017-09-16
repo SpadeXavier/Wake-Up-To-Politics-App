@@ -116,7 +116,29 @@ class Wutp():
             link_target = link['href']
             urls.append(link_target) 
 
-        return urls 
+        return urls
+
+    def get_dates():
+        """ returns an array of dates of published issues from newest to oldest
+        """
+        dates = []
+        
+        base_url = 'http://us3.campaign-archive2.com/home/?u=4946817b18454973fb1cd7ecc&id=e81d77774f'
+
+        uClient = uReq(base_url) 
+        html = uClient.read() 
+        uClient.close() 
+
+        archive_parsed = soup(html, "html.parser") 
+
+        all_lists = archive_parsed.findAll('li')
+        
+        for each_list in all_lists:
+            unformatted = each_list.text
+            date = unformatted.split(' ')[0]
+            dates.append(date) 
+        
+        return dates
 
 
 if __name__ == '__main__':
@@ -130,7 +152,8 @@ if __name__ == '__main__':
     print(wutp.get_content())
     print('------------------- URLS -------------------------') 
     print(Wutp.get_urls())
-
+    print('-------------------- DATES ------------------------') 
+    print(Wutp.get_dates()) 
 
 
 
