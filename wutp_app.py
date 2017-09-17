@@ -17,13 +17,15 @@ class App(Tk):
         # -- getting current directory 
         self.directory = os.path.dirname(os.path.realpath('__file__'))
 
+        # -- more taller than wider 
         self.width = 900 
         self.height = 600 
-        # -- more taller than wider 
         self.geometry('%dx%d' % (self.width, self.height))
         
         self.title('Wake Up To Politics v1') 
-        
+       
+        self.config()
+
         # -- getting all urls in order
         self.urls = Wutp.get_ordered_urls()
         
@@ -52,17 +54,17 @@ class App(Tk):
         # -- setting a symbol to place before each point
         symbols = [self.BLACK_CIRCLE, self.BLACK_DIAMOND, self.BLACK_TRIANGLE,
                 self.BLACK_PARALLEL]
-        symbol_counter = 4
+        symbol_counter = 0
       
-         # -- adding it to the canvas
+        # -- adding it to the canvas
         for heading,points in content.items():
             self.draw_heading(heading) 
             for point in points:
                 current_symbol = symbol_counter % 4
                 self.draw_point(point, symbol=symbols[current_symbol])
-                symbol_counter += 1
-            # -- reset symbol at each heading
-            symbol_counter = 4
+
+            # -- iterate to next symbol after each heading
+            symbol_counter += 1 
         
         # -- update the window and get the bounding box for the widgets and set
         # -- that as the scrolling region for the scrollbar
@@ -84,8 +86,9 @@ class App(Tk):
         self.scrollbar.pack(side=RIGHT, fill=Y)
         self.canvas.pack(side=TOP, fill=BOTH, expand=1, padx=20, pady=20)
        
-        # adding a frame to hold all the widgets
-        self.frame = ttk.Frame(self.canvas)
+        # adding a frame to hold all the widgets, ttk Frame doesn't support
+        # background config option 
+        self.frame = Frame(self.canvas) 
         self.canvas.create_window(0,0,window=self.frame, anchor='nw')
         
 
@@ -105,7 +108,6 @@ class App(Tk):
         
         point_box = Text(self.frame, bg="white", fg="black", wrap=WORD,
                 height=8, font=('arial', 14), pady=5, padx=20)
-
 
         point_box.insert(1.0, symbol + ' ')
         point_box.insert('insert', point)
