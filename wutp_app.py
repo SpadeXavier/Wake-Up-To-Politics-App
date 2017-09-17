@@ -1,7 +1,8 @@
-from wutp import Wutp 
+import os
 from tkinter import *
 from tkinter import ttk 
-import os
+from twitter_info import Twitter_Page 
+from wutp import Wutp 
 
 class App(Tk):
     
@@ -18,7 +19,7 @@ class App(Tk):
         self.directory = os.path.dirname(os.path.realpath('__file__'))
 
         # -- more taller than wider 
-        self.width = 900 
+        self.width = 1000 
         self.height = 600 
         self.geometry('%dx%d' % (self.width, self.height))
         
@@ -41,13 +42,11 @@ class App(Tk):
     def draw_article(self, url):
         """ puts content of an article on a canvas """
        
-        # -- adding header first
-        self.draw_header() 
-        
-        # -- adding canvas
+        self.draw_header()         
+        self.draw_twitter_feed() 
         self.draw_canvas()
 
-        # -- getting data   
+        # -- getting newsletter data   
         wutp = Wutp(url) 
         content = wutp.traverse()
       
@@ -69,10 +68,25 @@ class App(Tk):
         # -- update the window and get the bounding box for the widgets and set
         # -- that as the scrolling region for the scrollbar
         self.update()
-        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self.canvas.configure(scrollregion=self.canvas.bbox("all")) 
+        self.twitter_canvas.configure(scrollregion=self.twitter_canvas.bbox("all"))
 
         # -- adding button
         self.draw_buttons() 
+    
+    def draw_twitter_feed(self):
+
+        self.draw_twitter_canvas()
+        
+        twitter_page = Twitter_Page()
+        tweets = twitter_page.get_posts() 
+
+        for tweet in tweets:
+            self.draw_tweet(tweet) 
+
+
+
+
 
     def draw_canvas(self):
         """ draws canvas with a frame and a scrollbar in the root window """
@@ -132,7 +146,7 @@ class App(Tk):
         self.header_frame.pack(side=TOP, fill=X) 
 
     def draw_buttons(self):
-        """ draws next and previous buttons """ 
+        """ draws next, previous, and twitter toggle buttons """ 
         self.button_frame = Frame(self)
 
         # -- getting images
@@ -149,25 +163,28 @@ class App(Tk):
         prev_label.image = prev_image
         next_label.image = next_image
 
+        # -- adding a twitter hide button
+        self.twitter_hide = ttk.Button(self.button_frame, text='hide twitter')
+        
+        # -- adding the buttons to the frame 
         prev_label.pack(side=RIGHT, padx=75) 
+        self.twitter_hide.pack(side=RIGHT, padx=200) 
         next_label.pack(side=LEFT, padx=75)
 
-        # -- adding bindings
+        # -- adding bindings and commands
         prev_label.bind('<Button-1>', self.prev_article)
         next_label.bind('<Button-1>', self.next_article) 
+        self.twitter_hide.config(command=self.hide_twitter) 
 
         # -- adding frame to canvas
         self.button_frame.pack(side=BOTTOM, fill=X)
 
     def prev_article(self, event=None):
         """ redraws canvas with previous article """
-    
-        # -- destroy the canvas, scrollbar, header and the footer  
-        self.canvas.destroy()
-        self.scrollbar.destroy()
-        self.header_frame.destroy() 
-        self.button_frame.destroy()
         
+        # -- destory current view
+        self.destroy_view()
+
         # -- redraw with prev article in urls stack
         self.current_article += 1
         self.draw_article(self.urls[self.current_article])
@@ -176,15 +193,94 @@ class App(Tk):
     def next_article(self, event=None):
         """ redraws canvas with next article """
     
-        # -- destroy the canvas, scrollbar, header and the footer  
+        # -- destroy current view
+        self.destroy_view() 
+
+        # -- redraw with next article in urls stack
+        self.current_article -= 1 
+        self.draw_article(self.urls[self.current_article])
+
+    def draw_twitter_canvas(self):
+        """ draws twitter canvas with a frame of fixed width """
+
+        self.TWITTER_WIDTH = 100 
+        
+        self.twitter_canvas= Canvas(self, width=self.TWITTER_WIDTH)
+        self.twitter_scrollbar = ttk.Scrollbar(self, orient= VERTICAL,
+                command=self.twitter_canvas.yview) 
+        self.twitter_canvas.configure(yscrollcommand=self.twitter_scrollbar.set)
+        
+        # make sure to add scrollbar before adding the canvas
+        self.twitter_scrollbar.pack(side=RIGHT, fill=Y)
+        self.twitter_canvas.pack(side=RIGHT, fill=Y)
+       
+        # adding a frame to hold all the widgets, ttk Frame doesn't support
+        # background config option 
+        self.twitter_frame = Frame(self.twitter_canvas)
+        self.twitter_canvas.create_window(0,0,window=self.twitter_frame,
+                anchor='nw', width=self.TWITTER_WIDTH)
+
+        
+        # -- adding the twitter logo
+        twitter_logo = PhotoImage(file=self.directory + '/images/twitter_icon.png')
+        twitter_logo = twitter_logo.subsample(30, 30) 
+
+        # -- adding image to label
+        twitter_label = ttk.Label(self.twitter_frame, image = twitter_logo)
+
+        twitter_label.image = twitter_logo 
+
+        twitter_label.pack(side=TOP, pady=10)
+
+    def draw_tweet(self, tweet_content):
+        """ draws a tweet onto the twitter canvas' frame """
+
+        tweet = Text(self.twitter_frame, bg="white", fg="black", wrap=WORD, 
+                     height=6, font=('arial', 10), pady=5, padx=10)
+
+        tweet.insert(1.0, tweet_content)
+        tweet.configure(state='disabled')
+        tweet.pack(side=TOP)
+
+    def hide_twitter(self):
+        """ hides the twitter sidebar """
+
+        # -- change the button
+        self.twitter_hide.config(text='twitter disabled', state='disabled')  
+        self.twitter_hide.config(command=self.show_twitter)
+
+        self.twitter_canvas.pack_forget() 
+        self.twitter_scrollbar.pack_forget()
+
+        
+
+
+    def show_twitter(self):
+        """ shows the twitter sidebar """
+
+        # -- THIS DOESN'T WORK B/C OF PACK()...NEED TO REDRAW EVERYTHING
+        
+        # -- change the button
+        self.twitter_hide.config(text='hide twitter') 
+        self.twitter_hide.config(command=self.hide_twitter)
+
+        self.twitter_canvas.pack()
+        self.twitter_scrollbar.pack() 
+
+    def destroy_view(self):
+        """ calls destroy() on canvas, scrollbars, header, footer, and twitter
+        feed """ 
+
         self.canvas.destroy()
         self.scrollbar.destroy()
         self.header_frame.destroy()
         self.button_frame.destroy()
-        
-        # -- redraw with next article in urls stack
-        self.current_article -= 1 
-        self.draw_article(self.urls[self.current_article])
+        self.twitter_canvas.destroy()
+        self.twitter_scrollbar.destroy()
+
+
+
+
 
 if __name__=='__main__':
     
